@@ -1,0 +1,10 @@
+{
+  "name": "fuck-ai",
+  "private": true,
+  "workspaces": ["worker", "skill/cli"],
+  "scripts": {
+    "dev": "cd worker && npm run dev",
+    "deploy:worker": "cd worker && npx wrangler deploy",
+    "deploy:web": "npx wrangler pages deploy web/ --project-name fuck-ai"
+  }
+}

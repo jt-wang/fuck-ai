@@ -1,0 +1,442 @@
+:root {
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface-2: #111111;
+  --border: #1a1a1a;
+  --border-hover: #333;
+  --text: #e8e8e8;
+  --text-dim: #666;
+  --text-muted: #444;
+  --accent: #fff;
+  --genius: #00ff88;
+  --smart: #4488ff;
+  --normal: #888;
+  --dumb: #ff8800;
+  --braindead: #ff2222;
+  --unknown: #333;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', Menlo, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+a:hover { color: var(--text); }
+
+code {
+  font-family: var(--font-mono);
+  background: var(--surface-2);
+  padding: 0.15em 0.45em;
+  border-radius: 3px;
+  font-size: 0.85em;
+  border: 1px solid var(--border);
+}
+
+/* --- Nav --- */
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-left .logo {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.nav-right {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.8rem;
+}
+
+/* --- Header --- */
+header {
+  text-align: center;
+  padding: 5rem 2rem 3rem;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+header h1 {
+  font-family: var(--font-mono);
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 1.2rem;
+}
+
+.tagline {
+  font-size: 1.2rem;
+  color: var(--text);
+  font-weight: 400;
+  margin-bottom: 1rem;
+}
+
+.description {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.clock {
+  margin-top: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* --- Install bar --- */
+.install-bar {
+  text-align: center;
+  padding: 1rem 2rem;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.install-bar code {
+  font-size: 1rem;
+  padding: 0.3em 0.8em;
+  background: var(--bg);
+}
+
+.install-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+}
+
+/* --- Dashboard grid --- */
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.card {
+  background: var(--surface);
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.card:hover {
+  background: var(--surface-2);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.6rem;
+}
+
+.card-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.card-provider {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.card-score {
+  font-family: var(--font-mono);
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.card-score-sub {
+  font-size: 0.45em;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.card-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.4rem;
+}
+
+.card-fucks {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  border: 1px solid;
+}
+
+.badge-genius { color: var(--genius); border-color: var(--genius); }
+.badge-smart { color: var(--smart); border-color: var(--smart); }
+.badge-normal { color: var(--normal); border-color: var(--normal); }
+.badge-dumb { color: var(--dumb); border-color: var(--dumb); }
+.badge-braindead { color: var(--braindead); border-color: var(--braindead); }
+.badge-unknown { color: var(--unknown); border-color: var(--unknown); }
+
+/* Sparkline */
+.sparkline {
+  margin-top: 0.6rem;
+  height: 32px;
+}
+
+.sparkline svg {
+  width: 100%;
+  height: 100%;
+}
+
+.sparkline polyline {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sparkline .area {
+  stroke: none;
+  opacity: 0.08;
+}
+
+/* Fuck button */
+.fuck-btn {
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 0.45rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.fuck-btn:hover {
+  background: rgba(255, 34, 34, 0.06);
+  border-color: var(--braindead);
+  color: var(--braindead);
+}
+
+.fuck-btn:active { transform: scale(0.98); }
+
+.fuck-btn.fucked {
+  background: rgba(255, 34, 34, 0.08);
+  border-color: #441111;
+  color: #cc4444;
+}
+
+/* --- Detail panel --- */
+#detail-panel {
+  max-width: 1100px;
+  margin: 0 auto 2rem;
+  padding: 1.5rem 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  position: relative;
+}
+
+#detail-panel.hidden { display: none; }
+
+#detail-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+#detail-close:hover { color: var(--text); }
+
+#detail-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+#detail-meta {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-bottom: 1.2rem;
+  font-family: var(--font-mono);
+}
+
+#detail-chart { height: 180px; }
+
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 100%;
+}
+
+.bar-chart .bar {
+  flex: 1;
+  min-width: 3px;
+  border-radius: 1px 1px 0 0;
+  position: relative;
+  transition: height 0.3s;
+}
+
+.bar-chart .bar:hover {
+  opacity: 0.8;
+}
+
+.bar-chart .bar:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.45rem;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  color: var(--text-dim);
+  z-index: 10;
+}
+
+/* --- Methodology --- */
+.methodology {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.methodology h3 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.method-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.method-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.method-desc {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.method-desc a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* --- Footer --- */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem;
+  text-align: center;
+}
+
+.footer-links {
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.footer-links a {
+  color: var(--text-dim);
+}
+
+.dot { color: var(--text-muted); margin: 0 0.3rem; }
+
+.footer-copy {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 3rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  grid-column: 1 / -1;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  nav { padding: 1rem 1.5rem; }
+  header { padding: 3rem 1.5rem 2rem; }
+  header h1 { font-size: 2.5rem; }
+  main { padding: 1.5rem 1rem; }
+  .grid { grid-template-columns: 1fr; }
+  .method-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  .methodology { padding: 2rem 1.5rem; }
+}

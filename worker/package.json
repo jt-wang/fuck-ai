@@ -1,0 +1,19 @@
+{
+  "name": "fuck-ai-worker",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute fuck-ai-db --file=db/schema.sql",
+    "db:init:local": "wrangler d1 execute fuck-ai-db --file=db/schema.sql --local"
+  },
+  "dependencies": {
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250320.0",
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.2",
+    "wrangler": "^4.10.0"
+  }
+}

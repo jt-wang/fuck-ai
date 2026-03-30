@@ -1,0 +1,27 @@
+name = "fuck-ai-api"
+main = "src/index.ts"
+compatibility_date = "2025-03-01"
+workers_dev = true
+
+# Create these with:
+#   npx wrangler d1 create fuck-ai-db
+#   npx wrangler kv namespace create RATE_LIMIT
+# Then fill in the IDs below.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fuck-ai-db"
+database_id = "7f662db9-f22e-452a-99c2-86e0acd66410"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "1cfc49cbce9244b9b4b09e63ac85912b"
+
+# Custom domain for api.fuck-ai.dev
+[[routes]]
+pattern = "api.fuck-ai.dev"
+custom_domain = true
+
+# Cron trigger: recompute baselines every hour
+[triggers]
+crons = ["0 * * * *"]
