@@ -5,6 +5,7 @@ import type { ModelStatus } from "@/lib/api";
 import { fetchModelDetail, submitFuck } from "@/lib/api";
 import { dict, type Locale } from "@/lib/i18n";
 import Sparkline from "./Sparkline";
+import { hasSparkData } from "@/lib/sort";
 
 const STATUS_COLORS: Record<string, string> = {
   genius: "#00ff88",
@@ -94,7 +95,7 @@ export default function ModelCard({
         )}
       </div>
 
-      {sparkData.length > 0 && (
+      {hasSparkData(sparkData) && (
         <div className="mt-2">
           <Sparkline data={sparkData} color={color} />
         </div>

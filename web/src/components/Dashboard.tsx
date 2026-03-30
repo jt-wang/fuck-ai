@@ -6,7 +6,7 @@ import { fetchStatus } from "@/lib/api";
 import { dict, type Locale } from "@/lib/i18n";
 import ModelCard from "./ModelCard";
 
-type SortMode = "score" | "name";
+import { sortModels, type SortMode } from "@/lib/sort";
 
 export default function Dashboard({ locale }: { locale: Locale }) {
   const t = dict[locale];
@@ -39,16 +39,7 @@ export default function Dashboard({ locale }: { locale: Locale }) {
         )
       : data.models;
 
-    return [...models].sort((a, b) => {
-      if (sortMode === "name") {
-        return a.display_name.localeCompare(b.display_name);
-      }
-      // sort by score: scored models first (descending), then unscored
-      if (a.fuck_score === 0 && b.fuck_score === 0) return 0;
-      if (a.fuck_score === 0) return 1;
-      if (b.fuck_score === 0) return -1;
-      return b.fuck_score - a.fuck_score;
-    });
+    return sortModels(models, sortMode);
   }, [data, query, sortMode]);
 
   if (loading) {
