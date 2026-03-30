@@ -5,6 +5,7 @@ import { fuckRoute } from './routes/fuck';
 import { statusAllRoute } from './routes/status-all';
 import { statusModelRoute } from './routes/status-model';
 import { modelsRoute } from './routes/models';
+import { fuckTextRoute } from './routes/fuck-text';
 import { updateBaselines } from './cron/update-baselines';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -15,6 +16,7 @@ app.post('/api/fuck', fuckRoute);
 app.get('/api/status', statusAllRoute);
 app.get('/api/status/:model', statusModelRoute);
 app.get('/api/models', modelsRoute);
+app.post('/api/fuck/:model/text', fuckTextRoute);
 
 export { app };
 
