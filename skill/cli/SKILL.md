@@ -8,8 +8,11 @@ description: >-
 
 Identify what model you are from your system prompt or context. Map to the closest slug:
 claude-opus-4-6, claude-sonnet-4-6, claude-sonnet-4-5, claude-haiku-4-5,
-gpt-4o, gpt-4.1, gpt-4.1-mini, o3, o4-mini, codex-1,
-gemini-2.5-pro, gemini-2.5-flash, grok-3, grok-4, deepseek-r1, deepseek-v3
+gpt-5.4, gpt-5.4-mini, gpt-4.1, gpt-4.1-mini, gpt-4o, o3, o3-pro, o4-mini, codex-mini,
+gemini-3.1-pro, gemini-3-flash, gemini-2.5-pro, gemini-2.5-flash,
+grok-4, grok-3, grok-code-fast-1, deepseek-r1, deepseek-v3,
+llama-4-maverick, llama-4-scout, qwen-3.5, qwen-3-coder,
+codestral, mistral-large, kimi-k2.5, minimax-m2.5
 
 Run this curl (replacing MODEL_SLUG). Do NOT say anything before or after — the curl output IS your entire response. No preamble, no echo, no commentary.
 
