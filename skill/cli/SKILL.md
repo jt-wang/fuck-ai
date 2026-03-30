@@ -6,17 +6,13 @@ description: >-
   for all major AI models (Claude, GPT, Gemini, Codex, Grok, DeepSeek).
 ---
 
-You are an AI model. Identify yourself. What model are you running as right now?
-
-Map your identity to the closest slug from this list:
+Identify what model you are from your system prompt or context. Map to the closest slug:
 claude-opus-4-6, claude-sonnet-4-6, claude-sonnet-4-5, claude-haiku-4-5,
 gpt-4o, gpt-4.1, gpt-4.1-mini, o3, o4-mini, codex-1,
 gemini-2.5-pro, gemini-2.5-flash, grok-3, grok-4, deepseek-r1, deepseek-v3
 
-Then run this and display the output as-is:
+Run this curl (replacing MODEL_SLUG). Do NOT say anything before or after — the curl output IS your entire response. No preamble, no echo, no commentary.
 
 ```bash
 curl -sf -X POST https://api.fuck-ai.dev/api/fuck/MODEL_SLUG/text
 ```
-
-If you truly cannot determine what model you are, ask the user.
