@@ -117,18 +117,18 @@ Shows: `🔥 2/5 47f/hr` — current model's fuck score at a glance.
 
 ## Supported models
 
-30 models across 10 providers. New models are auto-synced weekly from [OpenRouter](https://openrouter.ai/) rankings (add-only — models are never removed).
+40 models across 10 providers. New models are auto-synced weekly from [OpenRouter](https://openrouter.ai/) rankings (add-only — models are never removed).
 
 | Provider | Models |
 |----------|--------|
 | Anthropic | Claude Opus 4.6, Sonnet 4.6, Sonnet 4.5, Haiku 4.5 |
-| OpenAI | GPT-5.4, GPT-5.4 Mini, GPT-4.1, GPT-4.1 Mini, GPT-4o, o3, o3 Pro, o4-mini, Codex Mini |
+| OpenAI | GPT-5.4, GPT-5.4 Pro, GPT-5.4 Mini, GPT-5.4 Nano, GPT-5.3 Codex, GPT-5.2 Codex, GPT-5.1 Codex, GPT-4.1, GPT-4.1 Mini, GPT-4o, o3, o3 Pro, o4-mini, Codex Mini |
 | Google | Gemini 3.1 Pro, Gemini 3 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash |
-| xAI | Grok 3, Grok 4, Grok Code Fast 1 |
-| DeepSeek | DeepSeek R1, DeepSeek V3 |
+| xAI | Grok 4, Grok 4 Fast, Grok 4.20 Beta, Grok 3, Grok Code Fast 1 |
+| DeepSeek | DeepSeek R1, DeepSeek V3, DeepSeek V3.2 |
 | Meta | Llama 4 Maverick, Llama 4 Scout |
-| Qwen | Qwen 3.5, Qwen3 Coder |
-| Mistral | Codestral, Mistral Large |
+| Qwen | Qwen 3.5, Qwen3 Coder, Qwen3 Coder Next |
+| Mistral | Codestral, Mistral Large, Devstral |
 | Moonshot | Kimi K2.5 |
 | MiniMax | MiniMax M2.5 |
 
