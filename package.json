@@ -5,6 +5,6 @@
   "scripts": {
     "dev": "cd worker && npm run dev",
     "deploy:worker": "cd worker && npx wrangler deploy",
-    "deploy:web": "npx wrangler pages deploy web/ --project-name fuck-ai"
+    "deploy:web": "cd web && npm run build && cd .. && npx wrangler pages deploy web/out/ --project-name fuck-ai"
   }
 }
