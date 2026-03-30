@@ -52,14 +52,19 @@ INSERT OR IGNORE INTO models (slug, display_name, provider, sort_order) VALUES
     ('claude-haiku-4-5', 'Claude Haiku 4.5', 'Anthropic', 4),
     -- OpenAI
     ('gpt-5.4', 'GPT-5.4', 'OpenAI', 10),
-    ('gpt-5.4-mini', 'GPT-5.4 Mini', 'OpenAI', 11),
-    ('gpt-4.1', 'GPT-4.1', 'OpenAI', 12),
-    ('gpt-4.1-mini', 'GPT-4.1 Mini', 'OpenAI', 13),
-    ('gpt-4o', 'GPT-4o', 'OpenAI', 14),
-    ('o3', 'o3', 'OpenAI', 15),
-    ('o3-pro', 'o3 Pro', 'OpenAI', 16),
-    ('o4-mini', 'o4-mini', 'OpenAI', 17),
-    ('codex-mini', 'Codex Mini', 'OpenAI', 18),
+    ('gpt-5.4-pro', 'GPT-5.4 Pro', 'OpenAI', 11),
+    ('gpt-5.4-mini', 'GPT-5.4 Mini', 'OpenAI', 12),
+    ('gpt-5.4-nano', 'GPT-5.4 Nano', 'OpenAI', 13),
+    ('gpt-5.3-codex', 'GPT-5.3 Codex', 'OpenAI', 14),
+    ('gpt-5.2-codex', 'GPT-5.2 Codex', 'OpenAI', 15),
+    ('gpt-5.1-codex', 'GPT-5.1 Codex', 'OpenAI', 16),
+    ('gpt-4.1', 'GPT-4.1', 'OpenAI', 17),
+    ('gpt-4.1-mini', 'GPT-4.1 Mini', 'OpenAI', 18),
+    ('gpt-4o', 'GPT-4o', 'OpenAI', 19),
+    ('o3', 'o3', 'OpenAI', 20),
+    ('o3-pro', 'o3 Pro', 'OpenAI', 21),
+    ('o4-mini', 'o4-mini', 'OpenAI', 22),
+    ('codex-mini', 'Codex Mini', 'OpenAI', 23),
     -- Google
     ('gemini-3.1-pro', 'Gemini 3.1 Pro', 'Google', 20),
     ('gemini-3-flash', 'Gemini 3 Flash', 'Google', 21),
@@ -67,20 +72,25 @@ INSERT OR IGNORE INTO models (slug, display_name, provider, sort_order) VALUES
     ('gemini-2.5-flash', 'Gemini 2.5 Flash', 'Google', 23),
     -- xAI
     ('grok-4', 'Grok 4', 'xAI', 30),
-    ('grok-3', 'Grok 3', 'xAI', 31),
-    ('grok-code-fast-1', 'Grok Code Fast 1', 'xAI', 32),
+    ('grok-4-fast', 'Grok 4 Fast', 'xAI', 31),
+    ('grok-4.20-beta', 'Grok 4.20 Beta', 'xAI', 32),
+    ('grok-3', 'Grok 3', 'xAI', 33),
+    ('grok-code-fast-1', 'Grok Code Fast 1', 'xAI', 34),
     -- DeepSeek
     ('deepseek-r1', 'DeepSeek R1', 'DeepSeek', 40),
     ('deepseek-v3', 'DeepSeek V3', 'DeepSeek', 41),
+    ('deepseek-v3.2', 'DeepSeek V3.2', 'DeepSeek', 42),
     -- Meta
     ('llama-4-maverick', 'Llama 4 Maverick', 'Meta', 50),
     ('llama-4-scout', 'Llama 4 Scout', 'Meta', 51),
     -- Qwen
     ('qwen-3.5', 'Qwen 3.5', 'Qwen', 60),
     ('qwen-3-coder', 'Qwen3 Coder', 'Qwen', 61),
+    ('qwen3-coder-next', 'Qwen3 Coder Next', 'Qwen', 62),
     -- Mistral
     ('codestral', 'Codestral', 'Mistral', 70),
     ('mistral-large', 'Mistral Large', 'Mistral', 71),
+    ('devstral', 'Devstral', 'Mistral', 72),
     -- Kimi / MiniMax
     ('kimi-k2.5', 'Kimi K2.5', 'Moonshot', 80),
     ('minimax-m2.5', 'MiniMax M2.5', 'MiniMax', 81);
