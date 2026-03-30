@@ -7,7 +7,7 @@ const https = require('https');
 
 const API = 'https://api.fuck-ai.dev';
 const SKILL_DIR = path.join(os.homedir(), '.claude', 'skills', 'fuck-ai');
-const SKILL_SRC = path.resolve(__dirname, '..', 'SKILL.md');
+const SKILL_SRC = path.resolve(__dirname, 'SKILL.md');
 
 const arg = process.argv[2];
 

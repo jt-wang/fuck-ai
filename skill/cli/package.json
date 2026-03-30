@@ -1,20 +1,20 @@
 {
-  "name": "fuck-ai",
-  "version": "1.0.0",
-  "description": "Is your AI model being dumb? Type /fuck — the crowd knows.",
+  "name": "fk-ai",
+  "version": "1.0.1",
+  "description": "Is your AI model being dumb? The crowd knows. fuck-ai.dev",
   "bin": {
-    "fuck-ai": "./index.js"
+    "fk-ai": "./index.js"
   },
   "files": [
     "index.js",
-    "../SKILL.md"
+    "SKILL.md"
   ],
   "keywords": [
     "claude-code",
     "skill",
     "ai",
     "rating",
-    "fuck"
+    "frustration"
   ],
   "repository": {
     "type": "git",

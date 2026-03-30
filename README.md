@@ -45,7 +45,7 @@ fuck_score = 0.6 * z_score_component + 0.4 * prr_component  →  1-5
 ## Install
 
 ```bash
-npx fuck-ai
+npx fk-ai
 ```
 
 This installs the `/fuck` skill into Claude Code.
