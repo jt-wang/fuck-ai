@@ -51,7 +51,11 @@ FUCKS=$(python3 -c "import sys,json; d=json.load(open('$CACHE')); print(d.get('c
 STATUS=$(python3 -c "import sys,json; d=json.load(open('$CACHE')); print(d.get('status','unknown'))" 2>/dev/null || echo "unknown")
 
 if [ "$SCORE" = "0" ]; then
-  echo "fuck-ai: no data"
+  if [ "$FUCKS" != "0" ]; then
+    echo "🧪 ${FUCKS}f/hr calibrating · /fuck if dumb"
+  else
+    echo "🧪 calibrating · /fuck if dumb"
+  fi
   exit 0
 fi
 

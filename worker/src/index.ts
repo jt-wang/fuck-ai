@@ -7,6 +7,7 @@ import { statusModelRoute } from './routes/status-model';
 import { modelsRoute } from './routes/models';
 import { fuckTextRoute } from './routes/fuck-text';
 import { updateBaselines } from './cron/update-baselines';
+import { syncModels } from './cron/sync-models';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -23,6 +24,14 @@ export { app };
 export default {
   fetch: app.fetch,
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    // Hourly: update EWMA baselines
     ctx.waitUntil(updateBaselines(env));
+
+    // Weekly (Monday 00:00 UTC): sync models from OpenRouter
+    const hour = new Date(event.scheduledTime).getUTCHours();
+    const day = new Date(event.scheduledTime).getUTCDay();
+    if (day === 1 && hour === 0) {
+      ctx.waitUntil(syncModels(env));
+    }
   },
 };
