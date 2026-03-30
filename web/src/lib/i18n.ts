@@ -34,6 +34,9 @@ export const dict = {
     source: "Source",
     now: "now",
     score: "score",
+    search: "Search models...",
+    sort_score: "by score",
+    sort_name: "by name",
   },
   zh: {
     title: "fuck-ai",
@@ -66,6 +69,9 @@ export const dict = {
     source: "源码",
     now: "当前",
     score: "评分",
+    search: "搜索模型...",
+    sort_score: "按评分",
+    sort_name: "按名称",
   },
   ja: {
     title: "fuck-ai",
@@ -98,5 +104,8 @@ export const dict = {
     source: "ソース",
     now: "現在",
     score: "スコア",
+    search: "モデルを検索...",
+    sort_score: "スコア順",
+    sort_name: "名前順",
   },
 } as const;
