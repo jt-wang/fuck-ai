@@ -27,8 +27,8 @@ export default function ModelCard({
   onRefresh: () => void;
 }) {
   const t = dict[locale];
+  const isCalibrating = model.fuck_score === 0;
   const color = STATUS_COLORS[model.status] || STATUS_COLORS.unknown;
-  const score = model.fuck_score > 0 ? `${model.fuck_score}` : "?";
   const fuckedKey = `fucked:${model.model}:${hourBucket}`;
   const [fucked, setFucked] = useState(false);
   const [sparkData, setSparkData] = useState<number[]>([]);
@@ -62,22 +62,36 @@ export default function ModelCard({
             {model.provider}
           </div>
         </div>
-        <div className="font-mono text-3xl font-extrabold tracking-tighter" style={{ color }}>
-          {score}
-          <span className="text-xs font-normal text-neutral-400 dark:text-neutral-600">/5</span>
-        </div>
+        {isCalibrating ? (
+          <div className="text-right">
+            <div className="font-mono text-lg font-bold tracking-tight text-neutral-400 dark:text-neutral-600">
+              {t.no_data}
+            </div>
+          </div>
+        ) : (
+          <div className="font-mono text-3xl font-extrabold tracking-tighter" style={{ color }}>
+            {model.fuck_score}
+            <span className="text-xs font-normal text-neutral-400 dark:text-neutral-600">/5</span>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-between items-center mt-1">
         <span className="font-mono text-xs text-neutral-500 dark:text-neutral-500">
           {model.current_fucks} {t.fucks_hr}
         </span>
-        <span
-          className="font-mono text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded border"
-          style={{ color, borderColor: color }}
-        >
-          {model.status}
-        </span>
+        {isCalibrating ? (
+          <span className="text-[10px] text-neutral-400 dark:text-neutral-600 italic">
+            {t.no_data_help}
+          </span>
+        ) : (
+          <span
+            className="font-mono text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded border"
+            style={{ color, borderColor: color }}
+          >
+            {model.status}
+          </span>
+        )}
       </div>
 
       {sparkData.length > 0 && (

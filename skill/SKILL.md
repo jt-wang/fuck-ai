@@ -66,7 +66,7 @@ Dashboard: https://fuck-ai.dev
 ```
 
 Key formatting rules:
-- If `fuck_score` is 0, show "insufficient data" instead of the score
+- If `fuck_score` is 0, show "calibrating — need more /fucks to build baseline" instead of the score
 - If `z_score` > 1.5, add context like "Getting more complaints than usual"
 - If `z_score` < -0.5, say "Quieter than usual — might actually be good right now"
 - Show at most 5 other models, sorted by fuck_score ascending (worst first)
