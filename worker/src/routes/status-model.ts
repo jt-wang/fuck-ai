@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import type { Env } from '../types';
-import { computeHourBucket } from '../lib/baseline';
+import { computeHourBucket, fillHourlyGaps } from '../lib/baseline';
 import { computeZScore, computeDisproportionality, computeFuckScore, scoreToStatus } from '../lib/scoring';
 
 export async function statusModelRoute(c: Context<{ Bindings: Env }>) {
@@ -72,6 +72,6 @@ export async function statusModelRoute(c: Context<{ Bindings: Env }>) {
     z_score: Math.round(z * 100) / 100,
     fuck_score: score,
     status: scoreToStatus(score),
-    hours: hourly.results,
+    hours: fillHourlyGaps(hourly.results, now),
   });
 }
