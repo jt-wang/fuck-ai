@@ -9,7 +9,10 @@ import LangSwitch from "@/components/LangSwitch";
 function Clock() {
   const [time, setTime] = useState("");
   useEffect(() => {
-    const update = () => setTime(new Date().toISOString().slice(11, 16));
+    const update = () => {
+      const d = new Date();
+      setTime(`${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`);
+    };
     update();
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
@@ -86,7 +89,7 @@ export default function Home() {
           — {t.cta}
         </p>
         <div className="mt-4 font-mono text-xs text-neutral-400 dark:text-neutral-600">
-          <Clock /> UTC
+          <Clock />
         </div>
       </header>
 

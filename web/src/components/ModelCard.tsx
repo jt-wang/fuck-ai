@@ -33,6 +33,7 @@ export default function ModelCard({
   const fuckedKey = `fucked:${model.model}:${hourBucket}`;
   const [fucked, setFucked] = useState(false);
   const [sparkData, setSparkData] = useState<number[]>([]);
+  const [sparkLabels, setSparkLabels] = useState<string[]>([]);
 
   useEffect(() => {
     setFucked(!!localStorage.getItem(fuckedKey));
@@ -40,7 +41,10 @@ export default function ModelCard({
 
   useEffect(() => {
     fetchModelDetail(model.model).then((d) => {
-      if (d?.hours) setSparkData(d.hours.map((h) => h.fuck_count));
+      if (d?.hours) {
+        setSparkData(d.hours.map((h) => h.fuck_count));
+        setSparkLabels(d.hours.map((h) => h.hour_bucket));
+      }
     });
   }, [model.model]);
 
@@ -97,7 +101,7 @@ export default function ModelCard({
 
       {hasSparkData(sparkData) && (
         <div className="mt-2">
-          <Sparkline data={sparkData} color={color} />
+          <Sparkline data={sparkData} labels={sparkLabels} color={color} />
         </div>
       )}
 
