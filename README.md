@@ -53,7 +53,8 @@ This installs the `/fuck` skill into Claude Code.
 ### Usage
 
 ```
-/fuck          — Record a complaint for the current model
+/fuck              — Record a complaint for the current model
+npx fk-ai <model>  — Submit from terminal (any tool, not just Claude Code)
 ```
 
 The skill auto-detects which model you're using and shows:
@@ -93,8 +94,8 @@ Shows: `🔥 2/5 47f/hr` — current model's fuck score at a glance.
                D1 (fucks)  D1 (baselines)  KV (rate limit)
                     ▲
                     │
-              Cron (hourly)
-              update baselines
+              Cron (hourly)     Cron (weekly)
+              update baselines  sync models from OpenRouter
 ```
 
 ### API
@@ -102,6 +103,7 @@ Shows: `🔥 2/5 47f/hr` — current model's fuck score at a glance.
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/api/fuck` | Submit a fuck `{"model": "claude-opus-4-6"}` |
+| POST | `/api/fuck/:model/text` | Submit a fuck with free-text rant |
 | GET | `/api/status` | Current hour status for all models |
 | GET | `/api/status/:model` | 24-hour detail for one model |
 | GET | `/api/models` | List of tracked models |
@@ -115,13 +117,20 @@ Shows: `🔥 2/5 47f/hr` — current model's fuck score at a glance.
 
 ## Supported models
 
+30 models across 10 providers. New models are auto-synced weekly from [OpenRouter](https://openrouter.ai/) rankings (add-only — models are never removed).
+
 | Provider | Models |
 |----------|--------|
 | Anthropic | Claude Opus 4.6, Sonnet 4.6, Sonnet 4.5, Haiku 4.5 |
-| OpenAI | GPT-4o, GPT-4.1, GPT-4.1 Mini, o3, o4-mini, Codex |
-| Google | Gemini 2.5 Pro, Gemini 2.5 Flash |
-| xAI | Grok 3, Grok 4 |
+| OpenAI | GPT-5.4, GPT-5.4 Mini, GPT-4.1, GPT-4.1 Mini, GPT-4o, o3, o3 Pro, o4-mini, Codex Mini |
+| Google | Gemini 3.1 Pro, Gemini 3 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash |
+| xAI | Grok 3, Grok 4, Grok Code Fast 1 |
 | DeepSeek | DeepSeek R1, DeepSeek V3 |
+| Meta | Llama 4 Maverick, Llama 4 Scout |
+| Qwen | Qwen 3.5, Qwen3 Coder |
+| Mistral | Codestral, Mistral Large |
+| Moonshot | Kimi K2.5 |
+| MiniMax | MiniMax M2.5 |
 
 ## Deploy your own
 
@@ -148,7 +157,7 @@ npx wrangler deploy
 
 # 6. Deploy website
 cd ..
-npx wrangler pages deploy web/ --project-name fuck-ai
+npx wrangler pages deploy web/out/ --project-name fuck-ai
 
 # 7. Set up custom domain in Cloudflare dashboard
 ```
