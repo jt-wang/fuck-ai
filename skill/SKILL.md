@@ -1,9 +1,9 @@
 ---
 name: fuck-ai
 description: >-
-  Rate the current AI model when it's being dumb (/fuck) or surprisingly smart (/fuck nice).
-  Submits to the fuck-ai crowd-sourced intelligence tracker and shows community sentiment.
-argument-hint: "[nice]"
+  Record a complaint when the AI model is being dumb. Type /fuck — zero friction, rage-driven.
+  Submits anonymously to fuck-ai.dev and shows real-time community frustration index (fuck score)
+  for all major AI models (Claude, GPT, Gemini, Codex, Grok, DeepSeek).
 ---
 
 # fuck-ai: Crowd-sourced AI Intelligence Tracker

@@ -1,6 +1,6 @@
 {
   "name": "fk-ai",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Is your AI model being dumb? The crowd knows. fuck-ai.dev",
   "bin": {
     "fk-ai": "./index.js"
