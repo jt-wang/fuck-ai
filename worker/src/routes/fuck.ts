@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import type { Env, FuckResponse } from '../types';
 import { hashIP } from '../lib/hash';
 import { computeHourBucket } from '../lib/baseline';
-import { computeZScore, computeDisproportionality, computeFuckScore, scoreToStatus } from '../lib/scoring';
+import { computeZScore, computeDisproportionality, computeFuckScore, scoreToStatus, resolveBaseline } from '../lib/scoring';
 
 export async function fuckRoute(c: Context<{ Bindings: Env }>) {
   const body = await c.req.json<{ model?: string }>().catch(() => ({}));
@@ -71,10 +71,15 @@ export async function fuckRoute(c: Context<{ Bindings: Env }>) {
     .bind(model, day_of_week, hour_of_day)
     .first<{ ewma_mean: number; ewma_std: number; sample_count: number }>();
 
-  const baselineMean = baseline?.ewma_mean || 0;
-  const baselineStd = baseline?.ewma_std || 1;
-  const sampleCount = baseline?.sample_count || 0;
-  const zScore = computeZScore(currentFucks, baselineMean, baselineStd);
+  // Aggregate baseline (fallback for new deployments)
+  const aggregate = await c.env.DB.prepare(
+    'SELECT AVG(ewma_mean) as avg_mean, AVG(ewma_std) as avg_std, SUM(sample_count) as total_samples FROM baselines WHERE model = ?',
+  )
+    .bind(model)
+    .first<{ avg_mean: number; avg_std: number; total_samples: number }>();
+
+  const resolved = resolveBaseline(baseline, aggregate);
+  const zScore = resolved ? computeZScore(currentFucks, resolved.mean, resolved.std) : 0;
 
   // Layer 2: Cross-model PRR (FDA method)
   const modelShare = await c.env.DB.prepare(
@@ -88,7 +93,7 @@ export async function fuckRoute(c: Context<{ Bindings: Env }>) {
   const disproportionality = computeDisproportionality(currentShare, expectedShare);
 
   // Combined score
-  const fuckScore = sampleCount >= 10 ? computeFuckScore(zScore, disproportionality) : 0;
+  const fuckScore = resolved ? computeFuckScore(zScore, disproportionality) : 0;
   const status = scoreToStatus(fuckScore);
 
   // Get other models' status for context
@@ -111,6 +116,12 @@ export async function fuckRoute(c: Context<{ Bindings: Env }>) {
     .all<{ model: string; ewma_mean: number; ewma_std: number; sample_count: number }>();
   const baselineMap = new Map(allBaselines.results.map((b) => [b.model, b]));
 
+  // Aggregate baselines for all models (fallback)
+  const allAggregates = await c.env.DB.prepare(
+    'SELECT model, AVG(ewma_mean) as avg_mean, AVG(ewma_std) as avg_std, SUM(sample_count) as total_samples FROM baselines GROUP BY model',
+  ).all<{ model: string; avg_mean: number; avg_std: number; total_samples: number }>();
+  const aggregateMap = new Map(allAggregates.results.map((a) => [a.model, a]));
+
   const allShares = await c.env.DB.prepare(
     'SELECT model, expected_share FROM model_shares',
   ).all<{ model: string; expected_share: number }>();
@@ -120,12 +131,14 @@ export async function fuckRoute(c: Context<{ Bindings: Env }>) {
     .filter((m) => m.slug !== model)
     .map((m) => {
       const mFucks = countMap.get(m.slug) || 0;
-      const mBaseline = baselineMap.get(m.slug);
-      const mZ = mBaseline ? computeZScore(mFucks, mBaseline.ewma_mean, mBaseline.ewma_std) : 0;
+      const mBaseline = baselineMap.get(m.slug) || null;
+      const mAgg = aggregateMap.get(m.slug) || null;
+      const mResolved = resolveBaseline(mBaseline, mAgg);
+      const mZ = mResolved ? computeZScore(mFucks, mResolved.mean, mResolved.std) : 0;
       const mShare = totalFucks > 0 ? mFucks / totalFucks : 0;
       const mExpected = shareMap.get(m.slug) || 0;
       const mDisp = computeDisproportionality(mShare, mExpected);
-      const mScore = mBaseline && mBaseline.sample_count >= 10 ? computeFuckScore(mZ, mDisp) : 0;
+      const mScore = mResolved ? computeFuckScore(mZ, mDisp) : 0;
       return {
         model: m.slug,
         display_name: m.display_name,
@@ -142,7 +155,7 @@ export async function fuckRoute(c: Context<{ Bindings: Env }>) {
     model,
     display_name: modelInfo.display_name,
     current_fucks: currentFucks,
-    baseline_mean: Math.round(baselineMean * 10) / 10,
+    baseline_mean: resolved ? Math.round(resolved.mean * 10) / 10 : 0,
     z_score: Math.round(zScore * 100) / 100,
     current_share: Math.round(currentShare * 1000) / 1000,
     expected_share: Math.round(expectedShare * 1000) / 1000,

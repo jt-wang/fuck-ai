@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import type { Env } from '../types';
 import { computeHourBucket, fillHourlyGaps } from '../lib/baseline';
-import { computeZScore, computeDisproportionality, computeFuckScore, scoreToStatus } from '../lib/scoring';
+import { computeZScore, computeDisproportionality, computeFuckScore, scoreToStatus, resolveBaseline } from '../lib/scoring';
 
 export async function statusModelRoute(c: Context<{ Bindings: Env }>) {
   const model = c.req.param('model');
@@ -34,12 +34,19 @@ export async function statusModelRoute(c: Context<{ Bindings: Env }>) {
     .first<{ count: number }>();
   const totalFucks = totalRow?.count || 1;
 
-  // Baseline & share
+  // Per-slot baseline
   const baseline = await c.env.DB.prepare(
     'SELECT ewma_mean, ewma_std, sample_count FROM baselines WHERE model = ? AND day_of_week = ? AND hour_of_day = ?',
   )
     .bind(model, day_of_week, hour_of_day)
     .first<{ ewma_mean: number; ewma_std: number; sample_count: number }>();
+
+  // Aggregate baseline (fallback)
+  const aggregate = await c.env.DB.prepare(
+    'SELECT AVG(ewma_mean) as avg_mean, AVG(ewma_std) as avg_std, SUM(sample_count) as total_samples FROM baselines WHERE model = ?',
+  )
+    .bind(model)
+    .first<{ avg_mean: number; avg_std: number; total_samples: number }>();
 
   const share = await c.env.DB.prepare(
     'SELECT expected_share FROM model_shares WHERE model = ?',
@@ -47,10 +54,11 @@ export async function statusModelRoute(c: Context<{ Bindings: Env }>) {
     .bind(model)
     .first<{ expected_share: number }>();
 
-  const z = baseline ? computeZScore(currentFucks, baseline.ewma_mean, baseline.ewma_std) : 0;
+  const resolved = resolveBaseline(baseline, aggregate);
+  const z = resolved ? computeZScore(currentFucks, resolved.mean, resolved.std) : 0;
   const currentShare = totalFucks > 0 ? currentFucks / totalFucks : 0;
   const disp = computeDisproportionality(currentShare, share?.expected_share || 0);
-  const score = baseline && baseline.sample_count >= 10 ? computeFuckScore(z, disp) : 0;
+  const score = resolved ? computeFuckScore(z, disp) : 0;
 
   // 24-hour trend
   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -67,8 +75,7 @@ export async function statusModelRoute(c: Context<{ Bindings: Env }>) {
     display_name: modelInfo.display_name,
     provider: modelInfo.provider,
     current_fucks: currentFucks,
-    baseline_mean: baseline ? Math.round(baseline.ewma_mean * 10) / 10 : null,
-    baseline_std: baseline ? Math.round(baseline.ewma_std * 10) / 10 : null,
+    baseline_mean: resolved ? Math.round(resolved.mean * 10) / 10 : null,
     z_score: Math.round(z * 100) / 100,
     fuck_score: score,
     status: scoreToStatus(score),

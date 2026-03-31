@@ -1,6 +1,20 @@
 import type { FuckStatus } from '../types';
 
 /**
+ * Minimum number of EWMA samples required before a per-slot baseline is trusted.
+ * Each (model, day_of_week, hour_of_day) slot is updated once per week,
+ * so a value of 3 means ~3 weeks of data before the slot-specific baseline is used.
+ * Below this threshold, we fall back to the model's aggregate baseline.
+ */
+export const MIN_BASELINE_SAMPLES = 3;
+
+/**
+ * Minimum total samples across ALL slots before we show any score.
+ * With 24 slots updated per day, this is reached after ~1 day of data.
+ */
+export const MIN_TOTAL_SAMPLES_FOR_FALLBACK = 20;
+
+/**
  * Layer 1: Downdetector method — z-score against own baseline.
  * Positive z = more fucks than usual = model is dumber.
  */
@@ -61,6 +75,26 @@ export function computeFuckScore(zScore: number, disproportionality: number): nu
   const s2 = disproportionalityToScore(disproportionality);
   const combined = 0.6 * s1 + 0.4 * s2;
   return Math.max(1, Math.min(5, Math.round(combined)));
+}
+
+/**
+ * Resolve a baseline for scoring: use the per-slot baseline if it has enough samples,
+ * otherwise fall back to the model's aggregate baseline across all time slots.
+ * Returns null if there's insufficient data everywhere (truly calibrating).
+ */
+export function resolveBaseline(
+  slotBaseline: { ewma_mean: number; ewma_std: number; sample_count: number } | null,
+  aggregateBaseline: { avg_mean: number; avg_std: number; total_samples: number } | null,
+): { mean: number; std: number } | null {
+  // Prefer slot-specific baseline when it has enough data
+  if (slotBaseline && slotBaseline.sample_count >= MIN_BASELINE_SAMPLES) {
+    return { mean: slotBaseline.ewma_mean, std: slotBaseline.ewma_std };
+  }
+  // Fall back to model's aggregate baseline across all slots
+  if (aggregateBaseline && aggregateBaseline.total_samples >= MIN_TOTAL_SAMPLES_FOR_FALLBACK) {
+    return { mean: aggregateBaseline.avg_mean, std: aggregateBaseline.avg_std };
+  }
+  return null;
 }
 
 export function scoreToStatus(score: number): FuckStatus {
