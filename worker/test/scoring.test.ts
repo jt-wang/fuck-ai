@@ -103,15 +103,15 @@ describe('disproportionalityToScore', () => {
 
 describe('computeFuckScore', () => {
   it('combines z-score and disproportionality with weights 0.6/0.4', () => {
-    // z-score maps to 1, disproportionality maps to 1 → combined = 1
+    // z-score maps to 1, disproportionality maps to 1 → combined = 1.0
     const score = computeFuckScore(3.0, 2.0);
     expect(score).toBe(1);
   });
 
-  it('returns 4 when both metrics are calm', () => {
-    // z=0.3 → score 4, d=1.0 → score 3, combined = 0.6*4 + 0.4*3 = 3.6 → round 4
+  it('returns continuous score when metrics are calm', () => {
+    // z=0.3 → score 4, d=1.0 → score 3, combined = 0.6*4 + 0.4*3 = 3.6
     const score = computeFuckScore(0.3, 1.0);
-    expect(score).toBe(4);
+    expect(score).toBe(3.6);
   });
 
   it('returns 5 when both metrics indicate quiet/good', () => {
@@ -120,31 +120,30 @@ describe('computeFuckScore', () => {
   });
 
   it('returns intermediate score when metrics disagree', () => {
-    // z says dumb (score 1), PRR says fine (score 5)
-    // 0.6*1 + 0.4*5 = 2.6 → round to 3
+    // z says braindead (score 1), PRR says genius (score 5)
+    // 0.6*1 + 0.4*5 = 2.6
     const score = computeFuckScore(3.0, 0.3);
-    expect(score).toBeGreaterThanOrEqual(2);
-    expect(score).toBeLessThanOrEqual(4);
+    expect(score).toBe(2.6);
   });
 
-  it('returns integer between 1 and 5', () => {
+  it('returns value between 1 and 5 with one decimal', () => {
     for (const z of [-3, -1, 0, 1, 3]) {
       for (const d of [0.2, 0.8, 1.0, 1.5, 2.5]) {
         const score = computeFuckScore(z, d);
         expect(score).toBeGreaterThanOrEqual(1);
         expect(score).toBeLessThanOrEqual(5);
-        expect(Number.isInteger(score)).toBe(true);
+        // One decimal place: score * 10 should be an integer
+        expect(Number.isInteger(score * 10)).toBe(true);
       }
     }
   });
 
   describe('confidence weighting', () => {
     it('blends toward neutral (3) at low confidence', () => {
-      // z=3.0 → raw score 1 (braindead), d=2.0 → score 1
       // raw = 0.6*1 + 0.4*1 = 1.0
-      // With confidence=0.25: 3 + (1-3)*0.25 = 3 - 0.5 = 2.5 → round 3
+      // With confidence=0.25: 3 + (1-3)*0.25 = 2.5
       const score = computeFuckScore(3.0, 2.0, 0.25);
-      expect(score).toBe(3); // closer to neutral than full confidence
+      expect(score).toBe(2.5);
     });
 
     it('returns full score at confidence=1', () => {
@@ -176,14 +175,14 @@ describe('computeFuckScore', () => {
       }
     });
 
-    it('always returns integer between 1 and 5 regardless of confidence', () => {
+    it('always returns value between 1 and 5 with one decimal regardless of confidence', () => {
       for (const conf of [0, 0.1, 0.25, 0.5, 0.75, 1.0]) {
         for (const z of [-3, 0, 3]) {
           for (const d of [0.2, 1.0, 2.5]) {
             const score = computeFuckScore(z, d, conf);
             expect(score).toBeGreaterThanOrEqual(1);
             expect(score).toBeLessThanOrEqual(5);
-            expect(Number.isInteger(score)).toBe(true);
+            expect(Number.isInteger(score * 10)).toBe(true);
           }
         }
       }
@@ -309,20 +308,28 @@ describe('resolveBaseline', () => {
 });
 
 describe('scoreToStatus', () => {
-  it('maps 5 to genius', () => {
+  it('maps >= 4.5 to genius', () => {
     expect(scoreToStatus(5)).toBe('genius');
+    expect(scoreToStatus(4.5)).toBe('genius');
   });
-  it('maps 4 to smart', () => {
+  it('maps 3.5–4.4 to smart', () => {
     expect(scoreToStatus(4)).toBe('smart');
+    expect(scoreToStatus(3.5)).toBe('smart');
+    expect(scoreToStatus(4.4)).toBe('smart');
   });
-  it('maps 3 to normal', () => {
+  it('maps 2.5–3.4 to normal', () => {
     expect(scoreToStatus(3)).toBe('normal');
+    expect(scoreToStatus(2.5)).toBe('normal');
+    expect(scoreToStatus(3.4)).toBe('normal');
   });
-  it('maps 2 to dumb', () => {
+  it('maps 1.5–2.4 to dumb', () => {
     expect(scoreToStatus(2)).toBe('dumb');
+    expect(scoreToStatus(1.5)).toBe('dumb');
+    expect(scoreToStatus(2.4)).toBe('dumb');
   });
-  it('maps 1 to braindead', () => {
+  it('maps 1–1.4 to braindead', () => {
     expect(scoreToStatus(1)).toBe('braindead');
+    expect(scoreToStatus(1.4)).toBe('braindead');
   });
   it('maps 0 to unknown', () => {
     expect(scoreToStatus(0)).toBe('unknown');
