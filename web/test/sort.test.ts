@@ -17,8 +17,8 @@ function makeModel(overrides: Partial<ModelStatus>): ModelStatus {
   };
 }
 
-describe("sortModels by score", () => {
-  it("sorts scored models descending by fuck_score", () => {
+describe("sortModels by score desc (default)", () => {
+  it("sorts scored models highest first", () => {
     const models = [
       makeModel({ model: "a", fuck_score: 2 }),
       makeModel({ model: "b", fuck_score: 5 }),
@@ -28,7 +28,7 @@ describe("sortModels by score", () => {
     expect(sorted.map((m) => m.model)).toEqual(["b", "c", "a"]);
   });
 
-  it("pushes fuck_score=0 models to the end", () => {
+  it("pushes unscored models to the end", () => {
     const models = [
       makeModel({ model: "calibrating", fuck_score: 0 }),
       makeModel({ model: "scored", fuck_score: 3 }),
@@ -38,7 +38,7 @@ describe("sortModels by score", () => {
     expect(sorted[1].model).toBe("calibrating");
   });
 
-  it("uses current_fucks as tiebreaker when both fuck_score=0", () => {
+  it("uses current_fucks as tiebreaker among unscored models", () => {
     const models = [
       makeModel({ model: "zero", fuck_score: 0, current_fucks: 0 }),
       makeModel({ model: "one", fuck_score: 0, current_fucks: 1 }),
@@ -46,6 +46,38 @@ describe("sortModels by score", () => {
     ];
     const sorted = sortModels(models, "score");
     expect(sorted.map((m) => m.model)).toEqual(["two", "one", "zero"]);
+  });
+});
+
+describe("sortModels by score asc", () => {
+  it("sorts scored models lowest first", () => {
+    const models = [
+      makeModel({ model: "a", fuck_score: 2 }),
+      makeModel({ model: "b", fuck_score: 5 }),
+      makeModel({ model: "c", fuck_score: 3 }),
+    ];
+    const sorted = sortModels(models, "score", "asc");
+    expect(sorted.map((m) => m.model)).toEqual(["a", "c", "b"]);
+  });
+
+  it("still pushes unscored models to the end", () => {
+    const models = [
+      makeModel({ model: "calibrating", fuck_score: 0 }),
+      makeModel({ model: "low", fuck_score: 1 }),
+      makeModel({ model: "high", fuck_score: 5 }),
+    ];
+    const sorted = sortModels(models, "score", "asc");
+    expect(sorted.map((m) => m.model)).toEqual(["low", "high", "calibrating"]);
+  });
+
+  it("reverses tiebreaker among unscored models", () => {
+    const models = [
+      makeModel({ model: "zero", fuck_score: 0, current_fucks: 0 }),
+      makeModel({ model: "one", fuck_score: 0, current_fucks: 1 }),
+      makeModel({ model: "two", fuck_score: 0, current_fucks: 2 }),
+    ];
+    const sorted = sortModels(models, "score", "asc");
+    expect(sorted.map((m) => m.model)).toEqual(["zero", "one", "two"]);
   });
 });
 
