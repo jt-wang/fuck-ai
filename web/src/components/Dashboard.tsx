@@ -6,7 +6,7 @@ import { fetchStatus } from "@/lib/api";
 import { dict, type Locale } from "@/lib/i18n";
 import ModelCard from "./ModelCard";
 
-import { sortModels, type SortMode } from "@/lib/sort";
+import { sortModels, type SortMode, type SortDirection } from "@/lib/sort";
 
 export default function Dashboard({ locale }: { locale: Locale }) {
   const t = dict[locale];
@@ -14,6 +14,7 @@ export default function Dashboard({ locale }: { locale: Locale }) {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("score");
+  const [sortDir, setSortDir] = useState<SortDirection>("desc");
 
   const refresh = useCallback(async () => {
     const d = await fetchStatus();
@@ -39,8 +40,8 @@ export default function Dashboard({ locale }: { locale: Locale }) {
         )
       : data.models;
 
-    return sortModels(models, sortMode);
-  }, [data, query, sortMode]);
+    return sortModels(models, sortMode, sortDir);
+  }, [data, query, sortMode, sortDir]);
 
   if (loading) {
     return (
@@ -68,26 +69,29 @@ export default function Dashboard({ locale }: { locale: Locale }) {
           placeholder={t.search}
           className="flex-1 px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm font-mono text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 outline-none focus:border-neutral-500 dark:focus:border-neutral-500"
         />
-        <button
-          onClick={() => setSortMode("score")}
-          className={`px-3 py-2 rounded-md text-xs font-mono border transition-colors ${
-            sortMode === "score"
-              ? "border-neutral-500 text-neutral-900 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-800"
-              : "border-neutral-300 dark:border-neutral-700 text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-400"
-          }`}
-        >
-          {t.sort_score}
-        </button>
-        <button
-          onClick={() => setSortMode("name")}
-          className={`px-3 py-2 rounded-md text-xs font-mono border transition-colors ${
-            sortMode === "name"
-              ? "border-neutral-500 text-neutral-900 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-800"
-              : "border-neutral-300 dark:border-neutral-700 text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-400"
-          }`}
-        >
-          {t.sort_name}
-        </button>
+        {(["score", "name"] as const).map((mode) => (
+          <button
+            key={mode}
+            onClick={() => {
+              if (sortMode === mode) {
+                setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+              } else {
+                setSortMode(mode);
+                setSortDir(mode === "name" ? "asc" : "desc");
+              }
+            }}
+            className={`px-3 py-2 rounded-md text-xs font-mono border transition-colors ${
+              sortMode === mode
+                ? "border-neutral-500 text-neutral-900 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-800"
+                : "border-neutral-300 dark:border-neutral-700 text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-400"
+            }`}
+          >
+            {mode === "score" ? t.sort_score : t.sort_name}
+            {sortMode === mode && (
+              <span className="ml-1">{sortDir === "desc" ? "\u25BC" : "\u25B2"}</span>
+            )}
+          </button>
+        ))}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-neutral-200 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
         {filtered.map((m) => (

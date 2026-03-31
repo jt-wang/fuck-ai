@@ -50,14 +50,24 @@ describe("sortModels by score", () => {
 });
 
 describe("sortModels by name", () => {
-  it("sorts alphabetically by display_name", () => {
+  it("sorts A-Z when direction is asc", () => {
     const models = [
       makeModel({ model: "c", display_name: "Claude" }),
       makeModel({ model: "a", display_name: "Alpha" }),
       makeModel({ model: "g", display_name: "GPT" }),
     ];
-    const sorted = sortModels(models, "name");
+    const sorted = sortModels(models, "name", "asc");
     expect(sorted.map((m) => m.model)).toEqual(["a", "c", "g"]);
+  });
+
+  it("sorts Z-A when direction is desc", () => {
+    const models = [
+      makeModel({ model: "c", display_name: "Claude" }),
+      makeModel({ model: "a", display_name: "Alpha" }),
+      makeModel({ model: "g", display_name: "GPT" }),
+    ];
+    const sorted = sortModels(models, "name", "desc");
+    expect(sorted.map((m) => m.model)).toEqual(["g", "c", "a"]);
   });
 });
 
