@@ -14,11 +14,13 @@ The crowd's frustration IS the data. We derive a 1-5 intelligence score using tw
 
 ### Layer 1: Self-referencing baseline ([Downdetector method](https://downdetector.com/methodology/))
 
-For each model, we maintain an EWMA (Exponentially Weighted Moving Average) baseline over 8-12 weeks of historical data, bucketed by (model, day_of_week, hour_of_day). When the current fuck rate deviates significantly from the baseline (measured by z-score), the model is flagged.
+For each model, we maintain an EWMA (Exponentially Weighted Moving Average) baseline bucketed by (model, day_of_week, hour_of_day). When the current fuck rate deviates significantly from the baseline (measured by z-score), the model is flagged.
 
 ```
 z_score = (current_fucks - baseline_mean) / baseline_std
 ```
+
+The EWMA uses **adaptive alpha** — new baselines learn fast (α=0.5), mature baselines are stable (α=0.1 floor). No manual tuning needed.
 
 ### Layer 2: Cross-model comparison ([FDA PRR method](https://en.wikipedia.org/wiki/Proportional_reporting_ratio))
 
@@ -31,16 +33,27 @@ disproportionality = current_share / expected_share
 ### Combined score
 
 ```
-fuck_score = 0.6 * z_score_component + 0.4 * prr_component  →  1-5
+fuck_score = 0.6 * z_score_component + 0.4 * prr_component  →  1.0–5.0
 ```
 
 | Score | Status | Meaning |
 |-------|--------|---------|
-| 5 | genius | Unusually quiet — model is doing great |
-| 4 | smart | Below average complaints |
-| 3 | normal | Typical complaint level |
-| 2 | dumb | Elevated complaints |
-| 1 | braindead | Anomalous complaint spike |
+| 4.5–5.0 | genius | Unusually quiet — model is doing great |
+| 3.5–4.4 | smart | Below average complaints |
+| 2.5–3.4 | normal | Typical complaint level |
+| 1.5–2.4 | dumb | Elevated complaints |
+| 1.0–1.4 | braindead | Anomalous complaint spike |
+
+### Self-improving scoring
+
+The system automatically improves with data — no manual intervention needed:
+
+- **Three-tier baseline fallback**: Uses the best available data at each point in time:
+  - Tier 1: Exact (model, day, hour) slot — most precise, available after ~1 week
+  - Tier 2: Same hour across all days — available after ~3 days
+  - Tier 3: Model-wide aggregate — available after ~5 hours
+- **Confidence-weighted scoring**: Early scores blend toward neutral (3.0). As data accumulates, scores swing more freely.
+- **Adaptive EWMA alpha**: Learning rate decays from 0.5 → 0.1 as baselines mature, making early baselines responsive and late ones stable.
 
 ## Install
 
@@ -75,7 +88,7 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-Shows: `🔥 2/5 47f/hr` — current model's fuck score at a glance.
+Shows: `🔥 2.3/5 47f/hr` — current model's fuck score at a glance.
 
 ## Architecture
 
