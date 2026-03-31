@@ -77,10 +77,10 @@ describe("Dashboard sort controls", () => {
     });
   });
 
-  it("defaults to score desc with down arrow", async () => {
+  it("defaults to score asc with up arrow (worst models first)", async () => {
     render(<Dashboard locale="en" />);
     await screen.findByRole("button", { name: /by score/ });
-    expect(getScoreBtn()).toHaveTextContent("by score▼");
+    expect(getScoreBtn()).toHaveTextContent("by score▲");
   });
 
   it("shows no arrow on inactive button", async () => {
@@ -94,11 +94,11 @@ describe("Dashboard sort controls", () => {
     render(<Dashboard locale="en" />);
     await screen.findByRole("button", { name: /by score/ });
     const btn = getScoreBtn();
-    expect(btn).toHaveTextContent("▼");
-    fireEvent.click(btn);
     expect(btn).toHaveTextContent("▲");
     fireEvent.click(btn);
     expect(btn).toHaveTextContent("▼");
+    fireEvent.click(btn);
+    expect(btn).toHaveTextContent("▲");
   });
 
   it("switches to name asc with up arrow when clicking name button", async () => {
@@ -109,24 +109,24 @@ describe("Dashboard sort controls", () => {
     expect(btn).toHaveTextContent("by name▲");
   });
 
-  it("sorts models by score desc by default (highest first)", async () => {
+  it("sorts models by score asc by default (worst models first)", async () => {
     render(<Dashboard locale="en" />);
     await screen.findByRole("button", { name: /by score/ });
     expect(getModelNamesInOrder()).toEqual([
-      "GPT-5.4",
-      "Gemini 3.1 Pro",
       "Claude Opus 4.6",
+      "Gemini 3.1 Pro",
+      "GPT-5.4",
     ]);
   });
 
-  it("sorts models by score asc (lowest first) after toggling", async () => {
+  it("sorts models by score desc (highest first) after toggling", async () => {
     render(<Dashboard locale="en" />);
     await screen.findByRole("button", { name: /by score/ });
     fireEvent.click(getScoreBtn());
     expect(getModelNamesInOrder()).toEqual([
-      "Claude Opus 4.6",
-      "Gemini 3.1 Pro",
       "GPT-5.4",
+      "Gemini 3.1 Pro",
+      "Claude Opus 4.6",
     ]);
   });
 
@@ -154,11 +154,11 @@ describe("Dashboard sort controls", () => {
     ]);
   });
 
-  it("resets to desc when switching back to score from name", async () => {
+  it("resets to asc when switching back to score from name", async () => {
     render(<Dashboard locale="en" />);
     await screen.findByRole("button", { name: /by name/ });
     fireEvent.click(getNameBtn());
     fireEvent.click(getScoreBtn());
-    expect(getScoreBtn()).toHaveTextContent("by score▼");
+    expect(getScoreBtn()).toHaveTextContent("by score▲");
   });
 });
