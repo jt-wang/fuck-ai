@@ -34,7 +34,7 @@ export const dict = {
     now: "now",
     score: "score",
     search: "Search models...",
-    sort_score: "by fuck",
+    sort_score: "by score",
     sort_name: "by name",
   },
   zh: {
@@ -68,7 +68,7 @@ export const dict = {
     now: "当前",
     score: "评分",
     search: "搜索模型...",
-    sort_score: "按 fuck",
+    sort_score: "按评分",
     sort_name: "按名称",
   },
   ja: {
@@ -102,7 +102,7 @@ export const dict = {
     now: "現在",
     score: "スコア",
     search: "モデルを検索...",
-    sort_score: "fuck順",
+    sort_score: "スコア順",
     sort_name: "名前順",
   },
 } as const;
