@@ -14,7 +14,7 @@ export default function Dashboard({ locale }: { locale: Locale }) {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("score");
-  const [sortDir, setSortDir] = useState<SortDirection>("desc");
+  const [sortDir, setSortDir] = useState<SortDirection>("asc");
 
   const refresh = useCallback(async () => {
     const d = await fetchStatus();
@@ -77,7 +77,7 @@ export default function Dashboard({ locale }: { locale: Locale }) {
                 setSortDir((d) => (d === "desc" ? "asc" : "desc"));
               } else {
                 setSortMode(mode);
-                setSortDir(mode === "name" ? "asc" : "desc");
+                setSortDir("asc");
               }
             }}
             className={`px-3 py-2 rounded-md text-xs font-mono border transition-colors ${
