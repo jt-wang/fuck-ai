@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { updateEWMA, computeHourBucket } from '../src/lib/baseline';
+import { updateEWMA, computeHourBucket, adaptiveAlpha } from '../src/lib/baseline';
 
 describe('updateEWMA', () => {
   const alpha = 0.3; // smoothing factor
@@ -39,6 +39,44 @@ describe('updateEWMA', () => {
     }
     expect(mean).toBeCloseTo(42, 0);
     expect(std).toBeLessThan(1); // std should shrink
+  });
+});
+
+describe('adaptiveAlpha', () => {
+  it('returns high alpha for first sample (responsive)', () => {
+    const alpha = adaptiveAlpha(0);
+    expect(alpha).toBe(0.5);
+  });
+
+  it('returns moderate alpha for early samples', () => {
+    const alpha = adaptiveAlpha(4);
+    expect(alpha).toBeCloseTo(0.25, 1);
+  });
+
+  it('returns lower alpha as samples increase', () => {
+    const early = adaptiveAlpha(1);
+    const mid = adaptiveAlpha(10);
+    const late = adaptiveAlpha(25);
+    expect(early).toBeGreaterThan(mid);
+    expect(mid).toBeGreaterThan(late);
+  });
+
+  it('never goes below 0.1 floor', () => {
+    expect(adaptiveAlpha(100)).toBe(0.1);
+    expect(adaptiveAlpha(1000)).toBe(0.1);
+  });
+
+  it('reaches floor around 25 samples', () => {
+    const alpha = adaptiveAlpha(25);
+    expect(alpha).toBe(0.1);
+  });
+
+  it('always returns a value between 0.1 and 0.5', () => {
+    for (const count of [0, 1, 2, 5, 10, 20, 50, 100]) {
+      const alpha = adaptiveAlpha(count);
+      expect(alpha).toBeGreaterThanOrEqual(0.1);
+      expect(alpha).toBeLessThanOrEqual(0.5);
+    }
   });
 });
 

@@ -1,6 +1,27 @@
 import type { FuckStatus } from '../types';
 
 /**
+ * Minimum data thresholds per baseline tier.
+ * Kept deliberately low — the confidence system handles quality scaling.
+ */
+const MIN_SLOT_SAMPLES = 1;       // 1 observation of this exact (day, hour) slot
+const MIN_HOUR_SAMPLES = 3;       // 3 observations across days for this hour
+const MIN_AGGREGATE_SAMPLES = 5;  // 5 observations across all slots
+
+/**
+ * Effective samples needed for full scoring confidence.
+ * Below this, scores blend toward neutral (3) to avoid volatile early results.
+ */
+const FULL_CONFIDENCE_SAMPLES = 10;
+
+/** Confidence multipliers — slot-specific data is worth more per sample. */
+const SLOT_CONFIDENCE_WEIGHT = 3;
+const HOUR_CONFIDENCE_WEIGHT = 1.5;
+const AGGREGATE_CONFIDENCE_WEIGHT = 0.5;
+
+const NEUTRAL_SCORE = 3;
+
+/**
  * Layer 1: Downdetector method — z-score against own baseline.
  * Positive z = more fucks than usual = model is dumber.
  */
@@ -51,16 +72,62 @@ export function disproportionalityToScore(d: number): number {
   return 1;
 }
 
+export interface BaselineTier {
+  mean: number;
+  std: number;
+  samples: number;
+}
+
+export interface ResolvedBaseline {
+  mean: number;
+  std: number;
+  confidence: number;
+}
+
 /**
- * Combined fuck score: weighted average of both layers.
+ * Three-tier baseline resolution with confidence scoring.
+ *
+ * Tier 1 (best):  Exact (model, day_of_week, hour_of_day) slot — updates 1x/week
+ * Tier 2 (mid):   Same hour_of_day across all days — updates 1x/day
+ * Tier 3 (rough): All slots for the model — updates 24x/day
+ *
+ * Confidence scales with data quality: slot-specific samples are weighted higher
+ * because they're more relevant than broad averages.
+ */
+export function resolveBaseline(
+  slot: BaselineTier | null,
+  hour: BaselineTier | null,
+  aggregate: BaselineTier | null,
+): ResolvedBaseline | null {
+  if (slot && slot.samples >= MIN_SLOT_SAMPLES) {
+    const confidence = Math.min(1, (slot.samples * SLOT_CONFIDENCE_WEIGHT) / FULL_CONFIDENCE_SAMPLES);
+    return { mean: slot.mean, std: slot.std, confidence };
+  }
+  if (hour && hour.samples >= MIN_HOUR_SAMPLES) {
+    const confidence = Math.min(1, (hour.samples * HOUR_CONFIDENCE_WEIGHT) / FULL_CONFIDENCE_SAMPLES);
+    return { mean: hour.mean, std: hour.std, confidence };
+  }
+  if (aggregate && aggregate.samples >= MIN_AGGREGATE_SAMPLES) {
+    const confidence = Math.min(1, (aggregate.samples * AGGREGATE_CONFIDENCE_WEIGHT) / FULL_CONFIDENCE_SAMPLES);
+    return { mean: aggregate.mean, std: aggregate.std, confidence };
+  }
+  return null;
+}
+
+/**
+ * Combined fuck score: weighted average of both layers, blended toward
+ * neutral (3) based on confidence. Early scores stay close to "normal";
+ * as data accumulates, scores swing freely.
+ *
  * Layer 1 (self-referencing z-score): weight 0.6
  * Layer 2 (cross-model PRR): weight 0.4
  */
-export function computeFuckScore(zScore: number, disproportionality: number): number {
+export function computeFuckScore(zScore: number, disproportionality: number, confidence: number = 1): number {
   const s1 = zScoreToScore(zScore);
   const s2 = disproportionalityToScore(disproportionality);
-  const combined = 0.6 * s1 + 0.4 * s2;
-  return Math.max(1, Math.min(5, Math.round(combined)));
+  const raw = 0.6 * s1 + 0.4 * s2;
+  const adjusted = NEUTRAL_SCORE + (raw - NEUTRAL_SCORE) * confidence;
+  return Math.max(1, Math.min(5, Math.round(adjusted)));
 }
 
 export function scoreToStatus(score: number): FuckStatus {

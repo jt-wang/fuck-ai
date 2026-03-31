@@ -2,7 +2,8 @@ import type { Context } from 'hono';
 import type { Env } from '../types';
 import { hashIP } from '../lib/hash';
 import { computeHourBucket } from '../lib/baseline';
-import { computeZScore, computeDisproportionality, computeFuckScore, scoreToStatus } from '../lib/scoring';
+import { loadModelBaselines } from '../lib/baseline-resolver';
+import { scoreModel } from '../lib/model-scorer';
 import { formatFuckText } from '../lib/format';
 
 export async function fuckTextRoute(c: Context<{ Bindings: Env }>) {
@@ -21,10 +22,9 @@ export async function fuckTextRoute(c: Context<{ Bindings: Env }>) {
   const now = new Date();
   const { hour_bucket, day_of_week, hour_of_day } = computeHourBucket(now);
 
+  // Rate limit
   const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || '0.0.0.0';
   const ipHash = await hashIP(ip);
-
-  // Rate limit
   const rlKey = `rl:${ipHash}:${hour_bucket}`;
   const rlCount = parseInt((await c.env.RATE_LIMIT.get(rlKey)) || '0', 10);
   if (rlCount >= 30) {
@@ -32,7 +32,7 @@ export async function fuckTextRoute(c: Context<{ Bindings: Env }>) {
   }
   await c.env.RATE_LIMIT.put(rlKey, String(rlCount + 1), { expirationTtl: 3600 });
 
-  // Insert
+  // Record the fuck
   await c.env.DB.prepare(
     `INSERT INTO fucks (model, ip_hash, hour_bucket, day_of_week, hour_of_day)
      VALUES (?, ?, ?, ?, ?)
@@ -41,60 +41,55 @@ export async function fuckTextRoute(c: Context<{ Bindings: Env }>) {
     .bind(model, ipHash, hour_bucket, day_of_week, hour_of_day)
     .run();
 
-  // Current counts
-  const currentRow = await c.env.DB.prepare(
-    'SELECT COUNT(*) as count FROM fucks WHERE model = ? AND hour_bucket = ?',
-  ).bind(model, hour_bucket).first<{ count: number }>();
+  // Load scoring data
+  const [currentRow, totalRow, baselines, modelShare] = await Promise.all([
+    c.env.DB.prepare(
+      'SELECT COUNT(*) as count FROM fucks WHERE model = ? AND hour_bucket = ?',
+    ).bind(model, hour_bucket).first<{ count: number }>(),
+
+    c.env.DB.prepare(
+      'SELECT COUNT(*) as count FROM fucks WHERE hour_bucket = ?',
+    ).bind(hour_bucket).first<{ count: number }>(),
+
+    loadModelBaselines(c.env.DB, model, day_of_week, hour_of_day),
+
+    c.env.DB.prepare(
+      'SELECT expected_share FROM model_shares WHERE model = ?',
+    ).bind(model).first<{ expected_share: number }>(),
+  ]);
+
   const currentFucks = currentRow?.count || 0;
-
-  const totalRow = await c.env.DB.prepare(
-    'SELECT COUNT(*) as count FROM fucks WHERE hour_bucket = ?',
-  ).bind(hour_bucket).first<{ count: number }>();
   const totalFucks = totalRow?.count || 1;
+  const result = scoreModel(currentFucks, totalFucks, baselines, modelShare?.expected_share || 0);
 
-  // Baseline & score
-  const baseline = await c.env.DB.prepare(
-    'SELECT ewma_mean, ewma_std, sample_count FROM baselines WHERE model = ? AND day_of_week = ? AND hour_of_day = ?',
-  ).bind(model, day_of_week, hour_of_day).first<{ ewma_mean: number; ewma_std: number; sample_count: number }>();
+  // Other models (simplified for text mode)
+  const [allModels, fuckCounts] = await Promise.all([
+    c.env.DB.prepare(
+      'SELECT slug, display_name FROM models WHERE slug != ? ORDER BY sort_order',
+    ).bind(model).all<{ slug: string; display_name: string }>(),
 
-  const modelShare = await c.env.DB.prepare(
-    'SELECT expected_share FROM model_shares WHERE model = ?',
-  ).bind(model).first<{ expected_share: number }>();
-
-  const baselineMean = baseline?.ewma_mean || 0;
-  const baselineStd = baseline?.ewma_std || 1;
-  const z = computeZScore(currentFucks, baselineMean, baselineStd);
-  const currentShare = totalFucks > 0 ? currentFucks / totalFucks : 0;
-  const disp = computeDisproportionality(currentShare, modelShare?.expected_share || 0);
-  const score = baseline && baseline.sample_count >= 10 ? computeFuckScore(z, disp) : 0;
-
-  // Other models
-  const allModels = await c.env.DB.prepare(
-    'SELECT slug, display_name FROM models WHERE slug != ? ORDER BY sort_order',
-  ).bind(model).all<{ slug: string; display_name: string }>();
-
-  const fuckCounts = await c.env.DB.prepare(
-    'SELECT model, COUNT(*) as fuck_count FROM fucks WHERE hour_bucket = ? AND model != ? GROUP BY model',
-  ).bind(hour_bucket, model).all<{ model: string; fuck_count: number }>();
+    c.env.DB.prepare(
+      'SELECT model, COUNT(*) as fuck_count FROM fucks WHERE hour_bucket = ? AND model != ? GROUP BY model',
+    ).bind(hour_bucket, model).all<{ model: string; fuck_count: number }>(),
+  ]);
 
   const countMap = new Map(fuckCounts.results.map((r) => [r.model, r.fuck_count]));
-
   const otherModels = allModels.results
     .filter((m) => countMap.has(m.slug))
     .map((m) => ({
       display_name: m.display_name,
       current_fucks: countMap.get(m.slug) || 0,
-      fuck_score: 0, // simplified: skip scoring for others in text mode
+      fuck_score: 0,
       status: 'unknown',
     }));
 
   const text = formatFuckText({
     display_name: modelInfo.display_name,
     current_fucks: currentFucks,
-    baseline_mean: Math.round(baselineMean * 10) / 10,
-    z_score: Math.round(z * 100) / 100,
-    fuck_score: score,
-    status: scoreToStatus(score),
+    baseline_mean: result.baseline_mean ?? 0,
+    z_score: result.z_score,
+    fuck_score: result.fuck_score,
+    status: result.status,
     other_models: otherModels,
   });
 

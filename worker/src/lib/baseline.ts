@@ -9,6 +9,20 @@ interface EWMAResult {
 const DEFAULT_INITIAL_STD = 5;
 
 /**
+ * Compute adaptive EWMA alpha based on sample count.
+ * Early observations get high alpha (responsive, fast learning).
+ * Mature baselines get low alpha (stable, resistant to noise).
+ *
+ *   count=1  → α=0.50 (responsive)
+ *   count=4  → α=0.25
+ *   count=10 → α=0.16
+ *   count=25 → α=0.10 (stable floor)
+ */
+export function adaptiveAlpha(sampleCount: number): number {
+  return Math.max(0.1, 0.5 / Math.sqrt(Math.max(sampleCount, 1)));
+}
+
+/**
  * Update EWMA (Exponentially Weighted Moving Average) with a new observation.
  * Used to maintain the per-(model, day_of_week, hour_of_day) baseline.
  *

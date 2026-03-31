@@ -1,8 +1,7 @@
 import type { Env } from '../types';
-import { computeHourBucket } from '../lib/baseline';
-import { updateEWMA } from '../lib/baseline';
+import { computeHourBucket, updateEWMA, adaptiveAlpha } from '../lib/baseline';
 
-const EWMA_ALPHA = 0.3;
+const SHARE_EWMA_ALPHA = 0.3;
 
 /**
  * Cron job: runs every hour at :00.
@@ -48,7 +47,8 @@ export async function updateBaselines(env: Env): Promise<void> {
     const oldStd = existing?.ewma_std || 0;
     const oldCount = existing?.sample_count || 0;
 
-    const { mean, std, count } = updateEWMA(oldMean, oldStd, oldCount, fuckCount, EWMA_ALPHA);
+    const alpha = adaptiveAlpha(oldCount);
+    const { mean, std, count } = updateEWMA(oldMean, oldStd, oldCount, fuckCount, alpha);
 
     await env.DB.prepare(
       `INSERT INTO baselines (model, day_of_week, hour_of_day, ewma_mean, ewma_std, sample_count, updated_at)
@@ -72,7 +72,7 @@ export async function updateBaselines(env: Env): Promise<void> {
       const oldTotal = existingShare?.total_fucks || 0;
       // EWMA for share as well
       const newShare = oldTotal > 0
-        ? EWMA_ALPHA * currentShare + (1 - EWMA_ALPHA) * oldShare
+        ? SHARE_EWMA_ALPHA * currentShare + (1 - SHARE_EWMA_ALPHA) * oldShare
         : currentShare;
 
       await env.DB.prepare(
