@@ -41,7 +41,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: cd web && npm ci --legacy-peer-deps
+      - run: cd web && npm ci
       - run: cd web && npm run build
       - run: npx wrangler pages deploy web/out --project-name=fuck-ai
         env:
