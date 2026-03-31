@@ -1,18 +1,25 @@
 import type { FuckStatus } from '../types';
 
 /**
- * Minimum number of EWMA samples required before a per-slot baseline is trusted.
- * Each (model, day_of_week, hour_of_day) slot is updated once per week,
- * so a value of 3 means ~3 weeks of data before the slot-specific baseline is used.
- * Below this threshold, we fall back to the model's aggregate baseline.
+ * Minimum data thresholds per baseline tier.
+ * Kept deliberately low — the confidence system handles quality scaling.
  */
-export const MIN_BASELINE_SAMPLES = 3;
+const MIN_SLOT_SAMPLES = 1;       // 1 observation of this exact (day, hour) slot
+const MIN_HOUR_SAMPLES = 3;       // 3 observations across days for this hour
+const MIN_AGGREGATE_SAMPLES = 5;  // 5 observations across all slots
 
 /**
- * Minimum total samples across ALL slots before we show any score.
- * With 24 slots updated per day, this is reached after ~1 day of data.
+ * Effective samples needed for full scoring confidence.
+ * Below this, scores blend toward neutral (3) to avoid volatile early results.
  */
-export const MIN_TOTAL_SAMPLES_FOR_FALLBACK = 20;
+const FULL_CONFIDENCE_SAMPLES = 10;
+
+/** Confidence multipliers — slot-specific data is worth more per sample. */
+const SLOT_CONFIDENCE_WEIGHT = 3;
+const HOUR_CONFIDENCE_WEIGHT = 1.5;
+const AGGREGATE_CONFIDENCE_WEIGHT = 0.5;
+
+const NEUTRAL_SCORE = 3;
 
 /**
  * Layer 1: Downdetector method — z-score against own baseline.
@@ -65,36 +72,62 @@ export function disproportionalityToScore(d: number): number {
   return 1;
 }
 
-/**
- * Combined fuck score: weighted average of both layers.
- * Layer 1 (self-referencing z-score): weight 0.6
- * Layer 2 (cross-model PRR): weight 0.4
- */
-export function computeFuckScore(zScore: number, disproportionality: number): number {
-  const s1 = zScoreToScore(zScore);
-  const s2 = disproportionalityToScore(disproportionality);
-  const combined = 0.6 * s1 + 0.4 * s2;
-  return Math.max(1, Math.min(5, Math.round(combined)));
+export interface BaselineTier {
+  mean: number;
+  std: number;
+  samples: number;
+}
+
+export interface ResolvedBaseline {
+  mean: number;
+  std: number;
+  confidence: number;
 }
 
 /**
- * Resolve a baseline for scoring: use the per-slot baseline if it has enough samples,
- * otherwise fall back to the model's aggregate baseline across all time slots.
- * Returns null if there's insufficient data everywhere (truly calibrating).
+ * Three-tier baseline resolution with confidence scoring.
+ *
+ * Tier 1 (best):  Exact (model, day_of_week, hour_of_day) slot — updates 1x/week
+ * Tier 2 (mid):   Same hour_of_day across all days — updates 1x/day
+ * Tier 3 (rough): All slots for the model — updates 24x/day
+ *
+ * Confidence scales with data quality: slot-specific samples are weighted higher
+ * because they're more relevant than broad averages.
  */
 export function resolveBaseline(
-  slotBaseline: { ewma_mean: number; ewma_std: number; sample_count: number } | null,
-  aggregateBaseline: { avg_mean: number; avg_std: number; total_samples: number } | null,
-): { mean: number; std: number } | null {
-  // Prefer slot-specific baseline when it has enough data
-  if (slotBaseline && slotBaseline.sample_count >= MIN_BASELINE_SAMPLES) {
-    return { mean: slotBaseline.ewma_mean, std: slotBaseline.ewma_std };
+  slot: BaselineTier | null,
+  hour: BaselineTier | null,
+  aggregate: BaselineTier | null,
+): ResolvedBaseline | null {
+  if (slot && slot.samples >= MIN_SLOT_SAMPLES) {
+    const confidence = Math.min(1, (slot.samples * SLOT_CONFIDENCE_WEIGHT) / FULL_CONFIDENCE_SAMPLES);
+    return { mean: slot.mean, std: slot.std, confidence };
   }
-  // Fall back to model's aggregate baseline across all slots
-  if (aggregateBaseline && aggregateBaseline.total_samples >= MIN_TOTAL_SAMPLES_FOR_FALLBACK) {
-    return { mean: aggregateBaseline.avg_mean, std: aggregateBaseline.avg_std };
+  if (hour && hour.samples >= MIN_HOUR_SAMPLES) {
+    const confidence = Math.min(1, (hour.samples * HOUR_CONFIDENCE_WEIGHT) / FULL_CONFIDENCE_SAMPLES);
+    return { mean: hour.mean, std: hour.std, confidence };
+  }
+  if (aggregate && aggregate.samples >= MIN_AGGREGATE_SAMPLES) {
+    const confidence = Math.min(1, (aggregate.samples * AGGREGATE_CONFIDENCE_WEIGHT) / FULL_CONFIDENCE_SAMPLES);
+    return { mean: aggregate.mean, std: aggregate.std, confidence };
   }
   return null;
+}
+
+/**
+ * Combined fuck score: weighted average of both layers, blended toward
+ * neutral (3) based on confidence. Early scores stay close to "normal";
+ * as data accumulates, scores swing freely.
+ *
+ * Layer 1 (self-referencing z-score): weight 0.6
+ * Layer 2 (cross-model PRR): weight 0.4
+ */
+export function computeFuckScore(zScore: number, disproportionality: number, confidence: number = 1): number {
+  const s1 = zScoreToScore(zScore);
+  const s2 = disproportionalityToScore(disproportionality);
+  const raw = 0.6 * s1 + 0.4 * s2;
+  const adjusted = NEUTRAL_SCORE + (raw - NEUTRAL_SCORE) * confidence;
+  return Math.max(1, Math.min(5, Math.round(adjusted)));
 }
 
 export function scoreToStatus(score: number): FuckStatus {

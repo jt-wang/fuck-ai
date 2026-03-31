@@ -6,7 +6,9 @@ import {
   zScoreToScore,
   disproportionalityToScore,
   scoreToStatus,
+  resolveBaseline,
 } from '../src/lib/scoring';
+import type { BaselineTier } from '../src/lib/scoring';
 import type { FuckStatus } from '../src/types';
 
 describe('computeZScore', () => {
@@ -134,6 +136,175 @@ describe('computeFuckScore', () => {
         expect(Number.isInteger(score)).toBe(true);
       }
     }
+  });
+
+  describe('confidence weighting', () => {
+    it('blends toward neutral (3) at low confidence', () => {
+      // z=3.0 → raw score 1 (braindead), d=2.0 → score 1
+      // raw = 0.6*1 + 0.4*1 = 1.0
+      // With confidence=0.25: 3 + (1-3)*0.25 = 3 - 0.5 = 2.5 → round 3
+      const score = computeFuckScore(3.0, 2.0, 0.25);
+      expect(score).toBe(3); // closer to neutral than full confidence
+    });
+
+    it('returns full score at confidence=1', () => {
+      const withConfidence = computeFuckScore(3.0, 2.0, 1.0);
+      const withDefault = computeFuckScore(3.0, 2.0);
+      expect(withConfidence).toBe(withDefault);
+    });
+
+    it('returns neutral at confidence=0', () => {
+      const score = computeFuckScore(3.0, 2.0, 0);
+      expect(score).toBe(3); // neutral
+    });
+
+    it('scores become more extreme as confidence increases', () => {
+      // braindead signal (z=3, d=2) at increasing confidence levels
+      const scores = [0.1, 0.3, 0.5, 0.7, 1.0].map(c => computeFuckScore(3.0, 2.0, c));
+      // Should be non-increasing (moving from neutral toward 1)
+      for (let i = 1; i < scores.length; i++) {
+        expect(scores[i]).toBeLessThanOrEqual(scores[i - 1]);
+      }
+    });
+
+    it('genius signal becomes more extreme with confidence', () => {
+      // genius signal (z=-2, d=0.3) at increasing confidence levels
+      const scores = [0.1, 0.3, 0.5, 0.7, 1.0].map(c => computeFuckScore(-2.0, 0.3, c));
+      // Should be non-decreasing (moving from neutral toward 5)
+      for (let i = 1; i < scores.length; i++) {
+        expect(scores[i]).toBeGreaterThanOrEqual(scores[i - 1]);
+      }
+    });
+
+    it('always returns integer between 1 and 5 regardless of confidence', () => {
+      for (const conf of [0, 0.1, 0.25, 0.5, 0.75, 1.0]) {
+        for (const z of [-3, 0, 3]) {
+          for (const d of [0.2, 1.0, 2.5]) {
+            const score = computeFuckScore(z, d, conf);
+            expect(score).toBeGreaterThanOrEqual(1);
+            expect(score).toBeLessThanOrEqual(5);
+            expect(Number.isInteger(score)).toBe(true);
+          }
+        }
+      }
+    });
+  });
+});
+
+describe('resolveBaseline', () => {
+  const makeSlot = (samples: number): BaselineTier => ({ mean: 20, std: 5, samples });
+  const makeHour = (samples: number): BaselineTier => ({ mean: 15, std: 6, samples });
+  const makeAgg = (samples: number): BaselineTier => ({ mean: 10, std: 8, samples });
+
+  describe('tier selection', () => {
+    it('returns null when all tiers are null', () => {
+      expect(resolveBaseline(null, null, null)).toBeNull();
+    });
+
+    it('returns null when all tiers have insufficient data', () => {
+      expect(resolveBaseline(makeSlot(0), makeHour(1), makeAgg(2))).toBeNull();
+    });
+
+    it('prefers slot-specific baseline when available (tier 1)', () => {
+      const result = resolveBaseline(makeSlot(1), makeHour(5), makeAgg(20));
+      expect(result).not.toBeNull();
+      expect(result!.mean).toBe(20); // slot mean
+    });
+
+    it('falls back to hour-only when slot has no data (tier 2)', () => {
+      const result = resolveBaseline(null, makeHour(5), makeAgg(20));
+      expect(result).not.toBeNull();
+      expect(result!.mean).toBe(15); // hour mean
+    });
+
+    it('falls back to aggregate when slot and hour have no data (tier 3)', () => {
+      const result = resolveBaseline(null, null, makeAgg(10));
+      expect(result).not.toBeNull();
+      expect(result!.mean).toBe(10); // aggregate mean
+    });
+
+    it('falls back to hour when slot has 0 samples', () => {
+      const result = resolveBaseline(makeSlot(0), makeHour(3), makeAgg(10));
+      expect(result).not.toBeNull();
+      expect(result!.mean).toBe(15); // hour mean
+    });
+
+    it('falls back to aggregate when hour has insufficient samples', () => {
+      const result = resolveBaseline(makeSlot(0), makeHour(2), makeAgg(10));
+      expect(result).not.toBeNull();
+      expect(result!.mean).toBe(10); // aggregate mean
+    });
+  });
+
+  describe('confidence scaling', () => {
+    it('returns higher confidence for slot-specific with more samples', () => {
+      const low = resolveBaseline(makeSlot(1), null, null)!;
+      const high = resolveBaseline(makeSlot(5), null, null)!;
+      expect(high.confidence).toBeGreaterThan(low.confidence);
+    });
+
+    it('slot-specific data has higher confidence per sample than aggregate', () => {
+      // Slot with 2 samples should have higher confidence than aggregate with 2*3=6 samples
+      // because slot data is more relevant (exact time match)
+      const slot = resolveBaseline(makeSlot(2), null, null)!;
+      const agg = resolveBaseline(null, null, makeAgg(6))!;
+      expect(slot.confidence).toBeGreaterThan(agg.confidence);
+    });
+
+    it('confidence is capped at 1.0', () => {
+      const result = resolveBaseline(makeSlot(100), null, null)!;
+      expect(result.confidence).toBe(1);
+    });
+
+    it('confidence is always between 0 and 1', () => {
+      for (const samples of [1, 2, 5, 10, 50, 100]) {
+        const slot = resolveBaseline(makeSlot(samples), null, null);
+        if (slot) {
+          expect(slot.confidence).toBeGreaterThan(0);
+          expect(slot.confidence).toBeLessThanOrEqual(1);
+        }
+        const agg = resolveBaseline(null, null, makeAgg(samples + 4));
+        if (agg) {
+          expect(agg.confidence).toBeGreaterThan(0);
+          expect(agg.confidence).toBeLessThanOrEqual(1);
+        }
+      }
+    });
+  });
+
+  describe('auto-improvement over time', () => {
+    it('after ~5 hours (aggregate only): shows score with low confidence', () => {
+      // 5 cron runs, 5 different slots, each with 1 sample → total=5
+      const result = resolveBaseline(null, null, makeAgg(5));
+      expect(result).not.toBeNull();
+      expect(result!.confidence).toBeLessThan(0.5);
+    });
+
+    it('after ~3 days (hour tier available): uses hour-specific data', () => {
+      // 3 days of data for this hour → hour has 3 samples
+      const result = resolveBaseline(null, makeHour(3), makeAgg(72));
+      expect(result).not.toBeNull();
+      expect(result!.mean).toBe(15); // uses hour tier (more precise than aggregate)
+      expect(result!.confidence).toBeGreaterThan(0);
+    });
+
+    it('hour tier with many samples has higher confidence than with few', () => {
+      const few = resolveBaseline(null, makeHour(3), null)!;
+      const many = resolveBaseline(null, makeHour(10), null)!;
+      expect(many.confidence).toBeGreaterThan(few.confidence);
+    });
+
+    it('after 1 week (slot available): uses most precise data', () => {
+      const result = resolveBaseline(makeSlot(1), makeHour(7), makeAgg(168));
+      expect(result).not.toBeNull();
+      expect(result!.mean).toBe(20); // slot mean — most precise
+    });
+
+    it('after 5 weeks (mature slot): near-full confidence', () => {
+      const result = resolveBaseline(makeSlot(5), makeHour(35), makeAgg(840));
+      expect(result).not.toBeNull();
+      expect(result!.confidence).toBeGreaterThanOrEqual(0.9);
+    });
   });
 });
 
