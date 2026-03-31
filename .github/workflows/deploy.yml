@@ -41,9 +41,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-      - run: npm ci
+      - run: cd web && npm ci
       - run: cd web && npm run build
-      - run: cd web && npx wrangler pages deploy out --project-name=fuck-ai
+      - run: npx wrangler pages deploy web/out --project-name=fuck-ai
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

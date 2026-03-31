@@ -127,16 +127,14 @@ export function computeFuckScore(zScore: number, disproportionality: number, con
   const s2 = disproportionalityToScore(disproportionality);
   const raw = 0.6 * s1 + 0.4 * s2;
   const adjusted = NEUTRAL_SCORE + (raw - NEUTRAL_SCORE) * confidence;
-  return Math.max(1, Math.min(5, Math.round(adjusted)));
+  return Math.round(Math.max(1, Math.min(5, adjusted)) * 10) / 10;
 }
 
 export function scoreToStatus(score: number): FuckStatus {
-  switch (score) {
-    case 5: return 'genius';
-    case 4: return 'smart';
-    case 3: return 'normal';
-    case 2: return 'dumb';
-    case 1: return 'braindead';
-    default: return 'unknown';
-  }
+  if (score <= 0) return 'unknown';
+  if (score < 1.5) return 'braindead';
+  if (score < 2.5) return 'dumb';
+  if (score < 3.5) return 'normal';
+  if (score < 4.5) return 'smart';
+  return 'genius';
 }
